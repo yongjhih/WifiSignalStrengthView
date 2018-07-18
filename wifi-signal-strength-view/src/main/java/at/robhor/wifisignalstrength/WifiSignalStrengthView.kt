@@ -8,34 +8,19 @@ import android.util.AttributeSet
 import android.view.View
 
 
-private const val UPDATE_INTERVAL_MILLIS = 1000L
-
 /**
  * Displays an icon representing wifi signal strength.
  *
  * @author Robert Horvath
  */
 class WifiSignalStrengthView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
-    private val wifiDrawable = WifiSignalStrengthDrawable()
+    val wifiDrawable = WifiSignalStrengthDrawable()
     private val levels = 5
     private var disconnected = false
 
     private var visible = false
-    private var started = false
-    private var running = false
-
-    private val updateRunnable = object : Runnable {
-        override fun run() {
-            if (running) {
-                update()
-                postDelayed(this, UPDATE_INTERVAL_MILLIS)
-            }
-        }
-    }
 
     init {
-        wifiDrawable.callback = this
-
         if (!isInEditMode) {
             setLayerType(View.LAYER_TYPE_HARDWARE, null)
         }
@@ -50,11 +35,8 @@ class WifiSignalStrengthView @JvmOverloads constructor(context: Context, attrs: 
             val strikeThrough = ta.getBoolean(R.styleable.WifiSignalStrengthView_wifiOff, false)
             wifiDrawable.strikeThrough = strikeThrough && !isInEditMode
 
-            if (ta.getBoolean(R.styleable.WifiSignalStrengthView_autoUpdating, true) && !isInEditMode) start()
-
             ta.recycle()
         } else if (!isInEditMode) {
-            start()
         }
 
         wifiDrawable.jumpToCurrentState()
@@ -76,38 +58,18 @@ class WifiSignalStrengthView @JvmOverloads constructor(context: Context, attrs: 
         }
     }
 
-    private val signalLevel: Int?
-        get() {
-            if (isInEditMode) return 3
+    private val signalLevel: Int? = 3
 
-            val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-            if (!wifiManager.isWifiEnabled) return null
-
-            val connectionInfo = wifiManager.connectionInfo
-
-            val rssi = connectionInfo.rssi
-            return WifiManager.calculateSignalLevel(rssi, levels)
-        }
-
-
-    fun start() {
-        started = true
-        updateRunning()
-    }
-
-    fun stop() {
-        started = false
-        updateRunning()
-    }
-
-    fun setNotConnected() {
-        stop()
+    fun disconnected() {
         wifiDrawable.filled = 0f
         wifiDrawable.strikeThrough = true
     }
 
+    fun setRssi(rssi: Int) {
+        setLevel(WifiManager.calculateSignalLevel(rssi, levels).toFloat() / (levels - 1))
+    }
+
     fun setLevel(level: Float) {
-        stop()
         wifiDrawable.filled = level
         wifiDrawable.strikeThrough = false
     }
@@ -115,31 +77,15 @@ class WifiSignalStrengthView @JvmOverloads constructor(context: Context, attrs: 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         visible = false
-        updateRunning()
     }
 
     override fun onWindowVisibilityChanged(visibility: Int) {
         super.onWindowVisibilityChanged(visibility)
         visible = visibility == View.VISIBLE
-        updateRunning()
     }
 
     override fun onVisibilityChanged(changedView: View, visibility: Int) {
         super.onVisibilityChanged(changedView, visibility)
-        updateRunning()
-    }
-
-    private fun updateRunning() {
-        val running = visible && started && isShown
-        if (running != this.running) {
-            if (running) {
-                update()
-                postDelayed(updateRunnable, UPDATE_INTERVAL_MILLIS)
-            } else {
-                removeCallbacks(updateRunnable)
-            }
-            this.running = running
-        }
     }
 
     override fun draw(canvas: Canvas) {
