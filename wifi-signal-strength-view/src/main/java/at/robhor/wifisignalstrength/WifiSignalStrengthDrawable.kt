@@ -31,6 +31,19 @@ class WifiSignalStrengthDrawable : Drawable() {
                 strikeThroughAnimator.setFloatValues(1f, 0f)
             }
             strikeThroughAnimator.start()
+            strikeThroughAnimator.end()
+            invalidateSelf()
+        }
+
+    var animateStrikeThrough = false
+        set(value) {
+            strikeThroughAnimator.end()
+            if (value) {
+                strikeThroughAnimator.setFloatValues(0f, 1f)
+            } else {
+                strikeThroughAnimator.setFloatValues(1f, 0f)
+            }
+            strikeThroughAnimator.start()
             invalidateSelf()
         }
 

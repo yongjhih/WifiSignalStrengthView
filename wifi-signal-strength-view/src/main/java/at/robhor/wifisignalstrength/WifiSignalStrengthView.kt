@@ -16,7 +16,7 @@ import android.view.View
 class WifiSignalStrengthView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) : View(context, attrs) {
     val wifiDrawable = WifiSignalStrengthDrawable()
     private val levels = 5
-    private var disconnected = false
+    private val signalLevel: Int? = 3
 
     private var visible = false
 
@@ -31,34 +31,17 @@ class WifiSignalStrengthView @JvmOverloads constructor(context: Context, attrs: 
             wifiDrawable.fillColor = ta.getColor(R.styleable.WifiSignalStrengthView_fillColor, wifiDrawable.fillColor)
             wifiDrawable.backgroundColor = ta.getColor(R.styleable.WifiSignalStrengthView_backgroundColor, wifiDrawable.backgroundColor)
             wifiDrawable.filled = ta.getFraction(R.styleable.WifiSignalStrengthView_fill, 1, 1, 0.8f)
-
-            val strikeThrough = ta.getBoolean(R.styleable.WifiSignalStrengthView_wifiOff, false)
-            wifiDrawable.strikeThrough = strikeThrough && !isInEditMode
+            wifiDrawable.strikeThrough = ta.getBoolean(R.styleable.WifiSignalStrengthView_wifiOff, false)
 
             ta.recycle()
-        } else if (!isInEditMode) {
         }
 
         wifiDrawable.jumpToCurrentState()
     }
 
-    private fun update() {
-        val level = signalLevel
-        val isDisconnected = level == null
-
-        wifiDrawable.filled = when (level) {
-            null -> 0f
-            else -> level.toFloat() / (levels - 1)
-        }
-        invalidate()
-
-        if (disconnected != isDisconnected && !isInEditMode) {
-            disconnected = isDisconnected
-            wifiDrawable.strikeThrough = isDisconnected
-        }
+    fun setNotConnected() {
+        disconnected()
     }
-
-    private val signalLevel: Int? = 3
 
     fun disconnected() {
         wifiDrawable.filled = 0f
